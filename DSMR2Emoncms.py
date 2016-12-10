@@ -16,10 +16,10 @@ import requests
 import time
 import logging
 
-emon_privateKey="649a259114fbd741c3f95b64038d5fd1"
-emon_node="99"
+emon_privateKey="xxx"  # put your emoncsm key here 
+emon_node="12"
 
-emon_host = "192.168.1.212";
+emon_host = "1.1.1.1"; # put your destination ip adress here
 emon_url  = "/emoncms/input/post.json?node=";
 
 emon_ID_NachtGebruik    = "NachtGebruik:";
