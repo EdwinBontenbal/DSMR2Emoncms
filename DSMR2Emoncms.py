@@ -1,35 +1,37 @@
-#
-#Thiss utility send a P1 (smartmeter) telegram to emoncsm 
+#This utility send a P1 (smartmeter) telegram to emoncsm
 #  
 # coded by:
 # auteur : Edwin Bontenbal
 # Email : Edwin.Bontenbal@Gmail.COM 
 version = "v1.00"
 
-import sys
-import os
-import stat
+
+# if errors during executing this scrip make sure you installed phyton and the required modules/libraries
 import serial
 import datetime
-import locale
 import requests
 import time
 import logging
+import re
+import json
+import crcmod
+import urllib2
 
-emon_privateKey="xxx"  # put your emoncsm key here 
-emon_node="12"
+emon_privateKey="649a259114fbd741c3f95b64038d5fd1"
+emon_node="99"
+emon_host = "192.168.1.212";
+emon_protocol="http://"
+emon_url  = "/emoncms/input/post.json?";
 
-emon_host = "1.1.1.1"; # put your destination ip adress here
-emon_url  = "/emoncms/input/post.json?node=";
+DSMR_List = [ [    "NightConsumption",  "1-0:1\.8\.1",            "\d{6}\.\d{3}", "NachtGebruik"    ] ] 
+DSMR_List.append (["DayConsumption",    "1-0:1\.8\.2",            "\d{6}\.\d{3}", 'DagGebruik'      ] )  
+DSMR_List.append (["NightGenerated",    "1-0:2\.8\.1",            "\d{6}\.\d{3}", 'NachtLevering'   ] )  
+DSMR_List.append (["DayGenerated",      "1-0:2\.8\.2",            "\d{6}\.\d{3}", 'DagLevering'     ] )  
+DSMR_List.append (["GasConsumption",    '0-1:24\.2\.1\(\d+W\)',   "\d{5}\.\d{3}", 'GasGebruik'      ] )  
+DSMR_List.append (["ActualTarif",       "0-0:96\.14\.0",          "\d{4}"       , 'ActueleTarief'   ] )  
+DSMR_List.append (["ActualConsumption", "1-0:1\.7\.0",            "\d{2}\.\d{3}", 'ActueleGebruik'  ] )  
+DSMR_List.append (["ActualGenerated",   "1-0:2\.7\.0",            "\d{2}\.\d{3}", 'ActueleLevering' ] )  
 
-emon_ID_NachtGebruik    = "NachtGebruik:";
-emon_ID_DagGebruik      = "DagGebruik:";
-emon_ID_NachtLevering   = "NachtLevering:";
-emon_ID_DagLevering     = "DagLevering:"; 
-emon_ID_GasGebruik      = "GasGebruik:";
-emon_ID_ActueleTarief   = "ActueleTarief:";
-emon_ID_ActueleGebruik  = "ActueleGebruik:";
-emon_ID_ActueleLevering = "ActueleLevering:";
 
 ###############################################################################################################
 # Main program
@@ -38,8 +40,10 @@ emon_ID_ActueleLevering = "ActueleLevering:";
 #Initialize
 p1_telegram  = False
 p1_timestamp = ""
-p1_teller    = 0
 p1_log       = True
+
+p1_complete_telegram_raw = ""
+p1_complete_telegram     = ""
 
 #Set COM port config
 ser          = serial.Serial()
@@ -51,16 +55,17 @@ ser.xonxoff  = 1
 ser.rtscts   = 0
 ser.timeout  = 20
 ser.port     = "/dev/serial/by-id/usb-FTDI_USB__-__Serial-if00-port0"
-#ser.port     = "/dev/ttyUSB0"
 
-LogFile              = '/var/log/DSMR2Emoncms.log'
+LogFile              = "/var/log/DSMR2Emoncms.log"
 LogFileLastTelegram  = "/tmp/DSMR2Emoncms_p1Telegram.log"
 WatchdogFile         = "/tmp/DSMR2Emoncms_Watchdog"
 
+#Set logging params
 logging.basicConfig(filename=LogFile,format='%(asctime)s %(message)s',level=logging.DEBUG)
 
 #Show startup arguments 
-print ("Poort: (%s)" % (ser.name) )
+print ("Port: (%s)" % (ser.name))
+logging.warning("Port: (%s)" % (ser.name))
 
 #Open COM port
 try:
@@ -70,7 +75,6 @@ except:
     logging.warning("Error opening port %s. "  % ser.name)
 
 while p1_log:
-    p1_line = ''
     try:
         p1_raw = ser.readline()
     except:
@@ -78,79 +82,58 @@ while p1_log:
         logging.warning("Error reading port %s. "  % ser.name)
         ser.close()
 
-    p1_str  = p1_raw
-    p1_line = p1_str.strip()
-    print (p1_line)
+    p1_complete_telegram_raw += p1_raw 
 
-    # fill variables   
-    if p1_line[0:9] == "1-0:1.8.1":
-       NachtGebruik =  p1_line[11:20]
-    if p1_line[0:9] == "1-0:1.8.2":
-       DagGebruik =  p1_line[11:20]
-    if p1_line[0:9] == "1-0:2.8.1":
-       NachtLevering =  p1_line[11:20]
-    if p1_line[0:9] == "1-0:2.8.1":
-       DagLevering =  p1_line[11:20]
-    if p1_line[0:11] == "0-0:96.14.0":
-       ActueleTarief =  p1_line[13:16]
-    if p1_line[0:9] == "1-0:1.7.0":
-       ActueleGebruik =  p1_line[11:16]
-    if p1_line[0:9] == "1-0:2.7.0":
-       ActueleLevering =  p1_line[11:16]
-    if p1_line[:10] == "0-1:24.2.1":
-       GasGebruik =  p1_line[27:35]
+    # see if telegram contains the complete telegram
+    if re.search('/.*!\w{4}', p1_complete_telegram_raw, re.DOTALL ) != None :
+       print ("Telegram found")  
+       logging.warning("Telegram found") 
+       # filter complete telegram 
+       found_telegram = re.search('.*(?P<Y>/.*!\w{4})', p1_complete_telegram_raw, re.DOTALL ).group(1)
+      
+       # write time to watchdog file  
+       f3=open(WatchdogFile, "w")
+       timestamp = int(time.time())
+       f3.write (str(timestamp))
+       f3.close()
 
-    # if start of telegram has been found
-    if p1_line[0:1] == "/":
-        p1_telegram = True
-        p1_teller   = p1_teller + 1
-        f3=open(WatchdogFile, "w")
-        f1=open(LogFileLastTelegram, "w")
-        timestamp = int(time.time())
-        print (timestamp)
-        f3.write (str(timestamp))
-        f3.close()
+       # write telegram to file
+       f1=open(LogFileLastTelegram, "w")
+       f1.write (found_telegram)
+       f1.close  
 
-    # if end of telegram has been found
-    elif p1_line[0:1] == "!":
-        if p1_telegram:
-            p1_teller   = 0
-            p1_telegram = False 
-            f1.write (p1_line)
-            f1.write ('\r\n')
-            f1.close  
-            logging.info(p1_line)
-            os.chmod(LogFileLastTelegram, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+       logging.debug(p1_complete_telegram_raw)
 
-            url = emon_url + emon_node + "&json={"
-            if (NachtGebruik> 0):
-              url += emon_ID_NachtGebruik + str(float(NachtGebruik)) + ","
-            if (DagGebruik> 0):
-              url += emon_ID_DagGebruik + str(float(DagGebruik)) + ","
-            if (NachtLevering> 0):
-              url += emon_ID_NachtLevering + str(float(NachtLevering)) + ","
-            if (DagLevering> 0):
-              url += emon_ID_DagLevering + str(float(NachtLevering)) + ","
-            if (GasGebruik> 0):
-              url += emon_ID_GasGebruik + str(float(GasGebruik)) + ","
-            if (ActueleTarief> 0):
-              url += emon_ID_ActueleTarief + str(int(ActueleTarief)) + ","
-            if (ActueleGebruik> 0):
-              url += emon_ID_ActueleGebruik + str(float(ActueleGebruik)) + ","
-            if (ActueleLevering> 0):
-              url += emon_ID_ActueleLevering + str(float(ActueleLevering))
+       # get crc from telegram
+       crc_in_telegram = re.search(r".*!(?P<Y>.{4})" , found_telegram, re.DOTALL).group(1) 
 
-            url += "}&apikey=" + emon_privateKey
+       # calculate crc of recieved telegram
+       crcstring = re.search(r'(?P<Y>\/.*!)' , found_telegram, re.DOTALL)
+       crc16 = crcmod.predefined.mkPredefinedCrcFun('crc16')
+       crc_calculated = re.search(r'0X(?P<Y>\w{0,4})', hex(crc16(crcstring.group(1))).upper()).group(1) 
 
-            print "http://" + emon_host + url
-
-            r=requests.get("http://" + emon_host + url)
-            print r.status_code
-
-    if p1_telegram:
-        logging.info(p1_line)
-        f1.write (p1_line)
-        f1.write ('\r\n')
+       # if calculated crc are equal then parse telegram and construct json string 
+       if crc_calculated.lstrip("0") == crc_in_telegram.lstrip("0"): 
+             logging.debug("ok    checksum. Calculated checksum: "+ crc_calculated + " checksum telegram: " + crc_in_telegram)
+             DataJson = {}   
+             for x in range(len(DSMR_List)):  
+              matchObj = re.search(r"" + DSMR_List[x][1] + "\((?P<Y>" + DSMR_List[x][2] + ")" , p1_complete_telegram_raw, re.DOTALL)
+              # if object has been found process it 
+              if matchObj != None : 
+               logging.debug("Item found    : " + DSMR_List[x][1])
+               DataJson[DSMR_List[x][3]] =float(matchObj.group(1)) 
+ 
+             url  = emon_protocol + emon_host + emon_url + "node=99&apikey=" + emon_privateKey + "&json=" + str( json.dumps(DataJson, separators=(',', ':')))
+             print (url)
+             logging.debug(url)
+             HTTPresult = urllib2.urlopen(url)
+             print HTTPresult.getcode()  
+             logging.debug(HTTPresult.getcode())
+             p1_complete_telegram_raw = ""
+      
+       else:
+             logging.debug("wrong checksum. Calculated checksum: "+ crc_calculated + " checksum telegram: " + crc_in_telegram)
+             p1_complete_telegram_raw = ""
 
 #Close port and show status
 try:

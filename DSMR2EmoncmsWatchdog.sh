@@ -20,19 +20,19 @@ then
    # File exists
    TimeInWatchdogFile=`cat "$FILE"`
    TimeDifference=$((TimeNow-TimeInWatchdogFile))
-
-   if [ "$TimeDifference" -gt "20" ];
+   if [ "$TimeDifference" -gt "20" ] && [ "$TimeInWatchdogFile" != "" ];
    then
       # Time difference is to big  
-      WriteLog "Time difference is to big ($TimeDifference), now it is $TimeNow and the file conatains $TimeInWatchdogFile)  
+      WriteLog "Watchdog file found."
+      WriteLog "Time difference is to big ($TimeDifference), now it is $TimeNow and the file contains ($TimeInWatchdogFile)." 
 	if [ -z "$ProcessID" ];
       then
 	 # No process found so start it
-          WriteLog "No processID found, start it!"
+         WriteLog "No ProcessID ($ProcessID) belonging to Process($PROCESS) found, start it!"
          $PROCESS 2>&1 >/dev/null &
       else
 	 # Process seems to be running, but something is wrong so kill it, and start is afterwards
-         WriteLog "ProcessID ($ProcessID) found, but something is wrong, kill it hard, and start it!" 
+         WriteLog "ProcessID ($ProcessID) belonging to Process($PROCESS) found, but something is wrong, kill it hard, and start it!" 
          kill -9 "$ProcessID"
          $PROCESS 2>&1 >/dev/null &
       fi
@@ -45,11 +45,11 @@ else
       if [ -z "$ProcessID" ];
       then
          # No process found so start it
-         WriteLog "No process found, so start the process, start it!"  
+         WriteLog "No ProcessID ($ProcessID) belonging to Process($PROCESS) found, start it!"
          $PROCESS 2>&1 >/dev/null &
       else
          # Process seems to be running, but something is wrong so kill it, and start is afterwards
-         WriteLog "ProcessID found, but something is wrong, kill it hard, and start it!" 
+         WriteLog "ProcessID ($ProcessID) belonging to Process($PROCESS) found, but something is wrong, kill it hard, and start it!"
          kill -9 "$ProcessID"
          $PROCESS 2>&1 >/dev/null &
       fi
