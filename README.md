@@ -42,3 +42,12 @@ add
         compress
 }
 ```
+
+Now change the setting in the file DSMR2Emoncms.py
+```
+emon_privateKey="QQQ insert your key here"
+emon_node="QQQ insert your node here" 
+emon_host = "QQQ insert your ip-adress of you emoncms install here"
+```
+
+ 

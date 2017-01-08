@@ -17,12 +17,14 @@ import json
 import crcmod
 import urllib2
 
-emon_privateKey="649a259114fbd741c3f95b64038d5fd1"
-emon_node="99"
-emon_host = "192.168.1.212";
+# Constructing url
+emon_privateKey="QQQ insert your key here"
+emon_node="QQQ insert your node here"
+emon_host = "QQQ insert your ip-adress of you emoncms install here"
 emon_protocol="http://"
-emon_url  = "/emoncms/input/post.json?";
+emon_url  = "/emoncms/input/post.json?"
 
+# What is it we want to monitor
 DSMR_List = [ [    "NightConsumption",  "1-0:1\.8\.1",            "\d{6}\.\d{3}", "NachtGebruik"    ] ] 
 DSMR_List.append (["DayConsumption",    "1-0:1\.8\.2",            "\d{6}\.\d{3}", 'DagGebruik'      ] )  
 DSMR_List.append (["NightGenerated",    "1-0:2\.8\.1",            "\d{6}\.\d{3}", 'NachtLevering'   ] )  
