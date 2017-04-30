@@ -1,26 +1,29 @@
 # DSMR2Emoncms
 
-install emoncms on a sever
+install emoncms on a sever for example a raspberry pi
 
 run the following commands on a raspberry py
 
-prerequisites
+# Prerequisites
 ```sh
+# Install python
 apt-get install python
 apt-get -y install python-pip
 
-# update pip
+# Update pip
 pip install --upgrade pip
 
-#import crcmod
+# Import crcmod
 pip install -U crcmod
 
+# Import serial 
+pip install -U pyserial  
 ```
 
+# Upgrading
+If you upgrade this script to a newer version make sure you store y're private settings ***THESE WILL BE OVERWRITTEN***
 
-
-
-Install on rasberian
+# Install on rasberian
 ```sh 
 cd /var/tmp
 git clone -b master https://github.com/EdwinBontenbal/DSMR2Emoncms.git
@@ -55,16 +58,14 @@ add
 Now change the setting in the file DSMR2Emoncms.py
 ```
 vi /usr/local/bin/DSMR2Emoncms.py
-emon_privateKey="QQQ insert your key here"
-emon_node="QQQ insert your node here" 
-emon_host = "QQQ insert your ip-adress of you emoncms install here"
+emon_privateKey = "QQQ insert your key here"
+emon_node       = "QQQ insert your node here" 
+emon_host       = "QQQ insert your ip-adress of you emoncms install here"
 
 If needed change the serial port "ser.port" preffered method is by-id. 
 ls -l /dev/serial/by-id/
 # results in "usb-FTDI_USB__-__Serial-if00-port0"
 ser.port     = "/dev/serial/by-id/usb-FTDI_USB__-__Serial-if00-port0"
-
-
 ```
 
  

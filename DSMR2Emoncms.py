@@ -3,7 +3,7 @@
 # coded by:
 # Auteur : Edwin Bontenbal
 # Email  : Edwin.Bontenbal@Gmail.COM 
-version = "v1.03"
+version = "v1.04"
 
 
 # if errors during executing this scrip make sure you installed phyton and the required modules/libraries
@@ -124,7 +124,7 @@ while p1_log:
               else:
                logging.debug("Item NOT found : " + DSMR_List[x][1])
  
-             url  = emon_protocol + emon_host + emon_url + "node=99&apikey=" + emon_privateKey + "&json=" + str( json.dumps(DataJson, separators=(',', ':')))
+             url  = emon_protocol + emon_host + emon_url + "node=" + emon_node + "&apikey=" + emon_privateKey + "&json=" + str( json.dumps(DataJson, separators=(',', ':')))
              print (url)
              logging.debug(url)
              HTTPresult = urllib2.urlopen(url)
