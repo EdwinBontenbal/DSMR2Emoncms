@@ -1,15 +1,14 @@
 #This utility send a P1 (smartmeter) telegram to emoncsm
 #  
 # coded by:
-# auteur : Edwin Bontenbal
-# Email : Edwin.Bontenbal@Gmail.COM 
-version = "v1.00"
+# Auteur : Edwin Bontenbal
+# Email  : Edwin.Bontenbal@Gmail.COM 
+version = "v1.03"
 
 
 # if errors during executing this scrip make sure you installed phyton and the required modules/libraries
 import serial
 import datetime
-import requests
 import time
 import logging
 import re
@@ -17,19 +16,17 @@ import json
 import crcmod
 import urllib2
 
-# Constructing url
-emon_privateKey="QQQ insert your key here"
-emon_node="QQQ insert your node here"
-emon_host = "QQQ insert your ip-adress of you emoncms install here"
-emon_protocol="http://"
-emon_url  = "/emoncms/input/post.json?"
+emon_privateKey = "QQQ insert your key here"
+emon_node       = "QQQ insert your node here"
+emon_host       = "QQQ insert your ip-adress of you emoncms install here"
+emon_protocol   = "http://"
+emon_url        = "/emoncms/input/post.json?"
 
-# What is it we want to monitor
 DSMR_List = [ [    "NightConsumption",  "1-0:1\.8\.1",            "\d{6}\.\d{3}", "NachtGebruik"    ] ] 
 DSMR_List.append (["DayConsumption",    "1-0:1\.8\.2",            "\d{6}\.\d{3}", 'DagGebruik'      ] )  
 DSMR_List.append (["NightGenerated",    "1-0:2\.8\.1",            "\d{6}\.\d{3}", 'NachtLevering'   ] )  
 DSMR_List.append (["DayGenerated",      "1-0:2\.8\.2",            "\d{6}\.\d{3}", 'DagLevering'     ] )  
-DSMR_List.append (["GasConsumption",    '0-1:24\.2\.1\(\d+W\)',   "\d{5}\.\d{3}", 'GasGebruik'      ] )  
+DSMR_List.append (["GasConsumption",    "0-1:24\.2\.1\(\d+\w\)",  "\d{5}\.\d{3}", 'GasGebruik'      ] )  
 DSMR_List.append (["ActualTarif",       "0-0:96\.14\.0",          "\d{4}"       , 'ActueleTarief'   ] )  
 DSMR_List.append (["ActualConsumption", "1-0:1\.7\.0",            "\d{2}\.\d{3}", 'ActueleGebruik'  ] )  
 DSMR_List.append (["ActualGenerated",   "1-0:2\.7\.0",            "\d{2}\.\d{3}", 'ActueleLevering' ] )  
@@ -122,8 +119,10 @@ while p1_log:
               matchObj = re.search(r"" + DSMR_List[x][1] + "\((?P<Y>" + DSMR_List[x][2] + ")" , p1_complete_telegram_raw, re.DOTALL)
               # if object has been found process it 
               if matchObj != None : 
-               logging.debug("Item found    : " + DSMR_List[x][1])
+               logging.debug("Item found     : " + DSMR_List[x][1])
                DataJson[DSMR_List[x][3]] =float(matchObj.group(1)) 
+              else:
+               logging.debug("Item NOT found : " + DSMR_List[x][1])
  
              url  = emon_protocol + emon_host + emon_url + "node=99&apikey=" + emon_privateKey + "&json=" + str( json.dumps(DataJson, separators=(',', ':')))
              print (url)
@@ -143,5 +142,3 @@ try:
 except:
     sys.exit ("Error closing port, program terminated %s. " % ser.name )      
     logging.warning("Error closing port, program terminated %s. "  % ser.name)
-
-
