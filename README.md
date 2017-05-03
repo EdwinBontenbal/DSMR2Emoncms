@@ -20,9 +20,6 @@ pip install -U crcmod
 pip install -U pyserial  
 ```
 
-# Upgrading
-If you upgrade this script to a newer version make sure you store y're private settings ***THESE WILL BE OVERWRITTEN***
-
 # Install on rasberian
 ```sh 
 cd /var/tmp
@@ -30,6 +27,9 @@ git clone -b master https://github.com/EdwinBontenbal/DSMR2Emoncms.git
 cd DSMR2Emoncms/
 cp DSMR2Emoncms.py /usr/local/bin/DSMR2Emoncms.py
 cp DSMR2EmoncmsWatchdog.sh /usr/local/bin/DSMR2EmoncmsWatchdog.sh
+mkdir /etc/DSMR2Emoncms
+cp DSMR2Emoncms_default.cfg  /etc/DSMR2Emoncms/DSMR2Emoncms.cfg
+
 ```` 
 
 add to crontab
@@ -55,12 +55,11 @@ add
 }
 ```
 
-Now change the setting in the file DSMR2Emoncms.py
+Now change the settings in the file DSMR2Emoncms.py
 ```
-vi /usr/local/bin/DSMR2Emoncms.py
-emon_privateKey = "QQQ insert your key here"
-emon_node       = "QQQ insert your node here" 
-emon_host       = "QQQ insert your ip-adress of you emoncms install here"
+vi /etc/DSMR2Emoncms/DSMR2Emoncms.cfg
+privateKey = <YOUR APIKEY OF EMONCMS INSTANCE> 
+emon_host  = <YOUR IP OF EMONCMS INSTANCE>
 
 If needed change the serial port "ser.port" preffered method is by-id. 
 ls -l /dev/serial/by-id/

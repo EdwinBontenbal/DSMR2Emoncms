@@ -3,10 +3,13 @@
 # coded by:
 # Auteur : Edwin Bontenbal
 # Email  : Edwin.Bontenbal@Gmail.COM 
-version = "v1.04"
+version = "v1.05"
+# VERSION    DATE        ADDED FUNCTIONALITY
+# 1.05	     03-05-2017  Config file added	
 
 
 # if errors during executing this scrip make sure you installed phyton and the required modules/libraries
+import ConfigParser
 import serial
 import datetime
 import time
@@ -16,11 +19,46 @@ import json
 import crcmod
 import urllib2
 
-emon_privateKey = "QQQ insert your key here"
-emon_node       = "QQQ insert your node here"
-emon_host       = "QQQ insert your ip-adress of you emoncms install here"
-emon_protocol   = "http://"
-emon_url        = "/emoncms/input/post.json?"
+# Set variables for logging
+LogFile              = "/var/log/DSMR2Emoncms.log"
+LogFileLastTelegram  = "/tmp/DSMR2Emoncms_p1Telegram.log"
+WatchdogFile         = "/tmp/DSMR2Emoncms_Watchdog"
+
+# Set logging params
+logging.basicConfig(filename=LogFile,format='%(asctime)s %(message)s',level=logging.DEBUG)
+
+# Open and read config file
+Config = ConfigParser.ConfigParser()
+Config.read("/etc/DSMR2Emoncms/DSMR2Emoncms.cfg")
+
+def ConfigSectionMap(section):
+    dict1 = {}
+    options = Config.options(section)
+    for option in options:
+        try:
+            dict1[option] = Config.get(section, option)
+            logging.debug("Reading config file : " + section + "," + option + " = " +  dict1[option] )
+        except:
+            dict1[option] = None
+    return dict1
+
+# Set emoncms variables
+emon_privateKey = ConfigSectionMap("emoncms")['privatekey']
+emon_node       = ConfigSectionMap("emoncms")['node']
+emon_host       = ConfigSectionMap("emoncms")['host']
+emon_protocol   = ConfigSectionMap("emoncms")['protocol']
+emon_url        = ConfigSectionMap("emoncms")['url']
+
+# Set COM port config
+ser          = serial.Serial()
+ser.baudrate = 115200
+ser.bytesize = serial.EIGHTBITS
+ser.parity   = serial.PARITY_NONE
+ser.stopbits = serial.STOPBITS_ONE
+ser.xonxoff  = 1
+ser.rtscts   = 0
+ser.timeout  = 20
+ser.port     = ConfigSectionMap("serial")['port']
 
 DSMR_List = [ [    "NightConsumption",  "1-0:1\.8\.1",            "\d{6}\.\d{3}", "NachtGebruik"    ] ] 
 DSMR_List.append (["DayConsumption",    "1-0:1\.8\.2",            "\d{6}\.\d{3}", 'DagGebruik'      ] )  
@@ -36,7 +74,7 @@ DSMR_List.append (["ActualGenerated",   "1-0:2\.7\.0",            "\d{2}\.\d{3}"
 # Main program
 ###############################################################################################################
 
-#Initialize
+# Initialize
 p1_telegram  = False
 p1_timestamp = ""
 p1_log       = True
@@ -44,26 +82,7 @@ p1_log       = True
 p1_complete_telegram_raw = ""
 p1_complete_telegram     = ""
 
-#Set COM port config
-ser          = serial.Serial()
-ser.baudrate = 115200
-ser.bytesize = serial.EIGHTBITS
-ser.parity   = serial.PARITY_NONE
-ser.stopbits = serial.STOPBITS_ONE
-ser.xonxoff  = 1
-ser.rtscts   = 0
-ser.timeout  = 20
-ser.port     = "/dev/serial/by-id/usb-FTDI_USB__-__Serial-if00-port0"
-
-LogFile              = "/var/log/DSMR2Emoncms.log"
-LogFileLastTelegram  = "/tmp/DSMR2Emoncms_p1Telegram.log"
-WatchdogFile         = "/tmp/DSMR2Emoncms_Watchdog"
-
-#Set logging params
-logging.basicConfig(filename=LogFile,format='%(asctime)s %(message)s',level=logging.DEBUG)
-
 #Show startup arguments 
-print ("Port: (%s)" % (ser.name))
 logging.warning("Port: (%s)" % (ser.name))
 
 #Open COM port
@@ -85,7 +104,6 @@ while p1_log:
 
     # see if telegram contains the complete telegram
     if re.search('/.*!\w{4}', p1_complete_telegram_raw, re.DOTALL ) != None :
-       print ("Telegram found")  
        logging.warning("Telegram found") 
        # filter complete telegram 
        found_telegram = re.search('.*(?P<Y>/.*!\w{4})', p1_complete_telegram_raw, re.DOTALL ).group(1)
@@ -125,13 +143,11 @@ while p1_log:
                logging.debug("Item NOT found : " + DSMR_List[x][1])
  
              url  = emon_protocol + emon_host + emon_url + "node=" + emon_node + "&apikey=" + emon_privateKey + "&json=" + str( json.dumps(DataJson, separators=(',', ':')))
-             print (url)
              logging.debug(url)
              HTTPresult = urllib2.urlopen(url)
-             print HTTPresult.getcode()  
-             logging.debug(HTTPresult.getcode())
+             logging.debug("Response code : " +  str(HTTPresult.getcode()))
+
              p1_complete_telegram_raw = ""
-      
        else:
              logging.debug("wrong checksum. Calculated checksum: "+ crc_calculated + " checksum telegram: " + crc_in_telegram)
              p1_complete_telegram_raw = ""
