@@ -6,6 +6,7 @@
 version = "v1.05"
 # VERSION    DATE        ADDED FUNCTIONALITY
 # 1.05	     03-05-2017  Config file added	
+# 1.06	     04-05-2017  3 fase metering added 	
 
 
 # if errors during executing this scrip make sure you installed phyton and the required modules/libraries
@@ -60,15 +61,20 @@ ser.rtscts   = 0
 ser.timeout  = 20
 ser.port     = ConfigSectionMap("serial")['port']
 
-DSMR_List = [ [    "NightConsumption",  "1-0:1\.8\.1",            "\d{6}\.\d{3}", "NachtGebruik"    ] ] 
-DSMR_List.append (["DayConsumption",    "1-0:1\.8\.2",            "\d{6}\.\d{3}", 'DagGebruik'      ] )  
-DSMR_List.append (["NightGenerated",    "1-0:2\.8\.1",            "\d{6}\.\d{3}", 'NachtLevering'   ] )  
-DSMR_List.append (["DayGenerated",      "1-0:2\.8\.2",            "\d{6}\.\d{3}", 'DagLevering'     ] )  
-DSMR_List.append (["GasConsumption",    "0-1:24\.2\.1\(\d+\w\)",  "\d{5}\.\d{3}", 'GasGebruik'      ] )  
-DSMR_List.append (["ActualTarif",       "0-0:96\.14\.0",          "\d{4}"       , 'ActueleTarief'   ] )  
-DSMR_List.append (["ActualConsumption", "1-0:1\.7\.0",            "\d{2}\.\d{3}", 'ActueleGebruik'  ] )  
-DSMR_List.append (["ActualGenerated",   "1-0:2\.7\.0",            "\d{2}\.\d{3}", 'ActueleLevering' ] )  
-
+DSMR_List = [ [    "NightConsumption",     "1-0:1\.8\.1",            "\d{6}\.\d{3}", "NachtGebruik"    ] ]
+DSMR_List.append (["DayConsumption",       "1-0:1\.8\.2",            "\d{6}\.\d{3}", 'DagGebruik'      ] )
+DSMR_List.append (["NightGenerated",       "1-0:2\.8\.1",            "\d{6}\.\d{3}", 'NachtLevering'   ] )
+DSMR_List.append (["DayGenerated",         "1-0:2\.8\.2",            "\d{6}\.\d{3}", 'DagLevering'     ] )
+DSMR_List.append (["GasConsumption",       "0-1:24\.2\.1\(\d+\w\)",  "\d{5}\.\d{3}", 'GasGebruik'      ] )
+DSMR_List.append (["ActualTarif",          "0-0:96\.14\.0",          "\d{4}"       , 'ActueleTarief'   ] )
+DSMR_List.append (["ActualConsumption",    "1-0:1\.7\.0",            "\d{2}\.\d{3}", 'ActueleGebruik'  ] )
+DSMR_List.append (["ActualConsumption_L1", "1-0:21\.7\.0",           "\d{2}\.\d{3}", 'ActueleGebruik_L1'  ] )
+DSMR_List.append (["ActualConsumption_L2", "1-0:41\.7\.0",           "\d{2}\.\d{3}", 'ActueleGebruik_L2'  ] )
+DSMR_List.append (["ActualConsumption_L3", "1-0:61\.7\.0",           "\d{2}\.\d{3}", 'ActueleGebruik_L3'  ] )
+DSMR_List.append (["ActualGenerated",      "1-0:2\.7\.0",            "\d{2}\.\d{3}", 'ActueleLevering' ] )
+DSMR_List.append (["ActualGenerated_L1",   "1-0:22\.7\.0",           "\d{2}\.\d{3}", 'ActueleLevering_L1' ] )
+DSMR_List.append (["ActualGenerated_L2",   "1-0:42\.7\.0",           "\d{2}\.\d{3}", 'ActueleLevering_L2' ] )
+DSMR_List.append (["ActualGenerated_L3",   "1-0:62\.7\.0",           "\d{2}\.\d{3}", 'ActueleLevering_L3' ] )
 
 ###############################################################################################################
 # Main program
